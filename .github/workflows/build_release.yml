@@ -20,33 +20,59 @@ jobs:
       run: |
         VERSION=${{ github.event.release.tag_name }}
         PKGNAME="htop-$VERSION"
-        SHASUM=$PKGNAME.tar.xz.sha256
         autoreconf -i
         mkdir -p /tmp/$PKGNAME
         mv * /tmp/$PKGNAME
         mv /tmp/$PKGNAME .
-        TARBALL=$PKGNAME.tar.xz
-        export XZ_OPT="-9e -T4"
-        tar cJf $TARBALL $PKGNAME
-        sha256sum $TARBALL > $SHASUM
-        echo "::set-output name=tarball::$TARBALL"
-        echo "::set-output name=shasum::$SHASUM"
-    - name: upload tarball
+        TARBALLXZ=$PKGNAME.tar.xz
+        SHASUMXZ=$PKGNAME.tar.xz.sha256
+        TARBALLZS=$PKGNAME.tar.zst
+        SHASUMZS=$PKGNAME.tar.zst.sha256
+        sudo apt install -y zstd
+        tar -I 'zstd --ultra -22' -cf $TARBALLZS $PKGNAME
+        tar -I 'xz -9e' -cf $TARBALLXZ $PKGNAME
+        sha256sum $TARBALLXZ > $SHASUMXZ
+        sha256sum $TARBALLZS > $SHASUMZS
+        echo "::set-output name=tarballxz::$TARBALLXZ"
+        echo "::set-output name=shasumxz::$SHASUMXZ"
+        echo "::set-output name=tarballzs::$TARBALLZS"
+        echo "::set-output name=shasumzs::$SHASUMZS"
+    - name: upload tarballxz
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./${{ steps.archive.outputs.tarball }}
-        asset_name: ${{ steps.archive.outputs.tarball }}
+        asset_path: ./${{ steps.archive.outputs.tarballxz }}
+        asset_name: ${{ steps.archive.outputs.tarballxz }}
         asset_content_type: application/gzip
 
-    - name: upload shasum
+    - name: upload shasumxz
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./${{ steps.archive.outputs.shasum }}
-        asset_name: ${{ steps.archive.outputs.shasum }}
+        asset_path: ./${{ steps.archive.outputs.shasumxz }}
+        asset_name: ${{ steps.archive.outputs.shasumxz }}
+        asset_content_type: text/plain
+
+    - name: upload tarballzs
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./${{ steps.archive.outputs.tarballzs }}
+        asset_name: ${{ steps.archive.outputs.tarballzs }}
+        asset_content_type: application/gzip
+
+    - name: upload shasumzs
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./${{ steps.archive.outputs.shasumzs }}
+        asset_name: ${{ steps.archive.outputs.shasumzs }}
         asset_content_type: text/plain
