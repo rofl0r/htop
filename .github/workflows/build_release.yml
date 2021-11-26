@@ -26,6 +26,7 @@ jobs:
         mv * /tmp/$PKGNAME
         mv /tmp/$PKGNAME .
         TARBALL=$PKGNAME.tar.xz
+        export XZ_OPT="-9e -T4"
         tar cJf $TARBALL $PKGNAME
         sha256sum $TARBALL > $SHASUM
         echo "::set-output name=tarball::$TARBALL"
